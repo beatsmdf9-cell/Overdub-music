@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Overdub — MIDI Looper</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a222a" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #141a20; }
+  body { font-family: 'JetBrains Mono','SF Mono',Consolas,monospace; color: #dbe2e8; overscroll-behavior: none; }
+  #root { height: 100vh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-track { background: #131b22; }
+  ::-webkit-scrollbar-thumb { background: #33424f; border-radius: 4px; }
+  button, select, input { font-family: inherit; }
+  button { cursor: pointer; }
+
+  .topBar { display:flex; align-items:center; gap:14px; padding:8px 14px; background:#1a222a; border-bottom:1px solid #2c3a48; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:800; letter-spacing:2px; font-size:13px; color:#eef2f5; }
+  .transport { display:flex; align-items:center; gap:6px; }
+  .tBtn { width:34px; height:34px; border-radius:6px; border:1px solid #33424f; background:#212b35; color:#dbe2e8; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .tBtn.active { background:#e2574c; color:#12171c; border-color:#e2574c; }
+  .tBtn.activeGreen { background:#8bd450; color:#12171c; border-color:#8bd450; }
+  .bpmBox { display:flex; align-items:center; gap:6px; background:#212b35; border:1px solid #33424f; border-radius:6px; padding:4px 8px; }
+  .bpmBox label { font-size:9px; color:#8fa0ad; letter-spacing:1px; }
+  .bpmBox input { width:34px; background:transparent; border:none; color:#dbe2e8; font-size:12px; outline:none; }
+  .loopBarWrap { flex:1; min-width:100px; margin-left:6px; }
+  .loopBar { height:8px; border-radius:4px; background:#212b35; border:1px solid #33424f; overflow:hidden; }
+  .loopBarFill { height:100%; background:#8bd450; width:0%; }
+  .exportBtn { display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:6px; border:1px solid #6fa8c9; background:transparent; color:#a9c6dc; font-size:11px; font-weight:700; }
+  .midiStatus { display:flex; align-items:center; gap:8px; padding:6px 14px; font-size:11px; color:#8fa0ad; background:#161d24; border-bottom:1px solid #232e38; flex-wrap:wrap; }
+  select { background:#212b35; border:1px solid #33424f; color:#dbe2e8; font-size:11px; border-radius:5px; padding:5px 6px; }
+  .exportBar { display:flex; align-items:center; gap:12px; padding:6px 14px; background:#1c2b22; border-bottom:1px solid #2c4a37; font-size:11px; color:#a8e6b8; }
+  .exportBar a { color:#8bd450; font-weight:700; text-decoration:underline; }
+  .exportBar button { margin-left:auto; background:transparent; border:none; color:#a8e6b8; font-size:14px; }
+
+  .body { flex:1; display:flex; overflow:hidden; }
+  .tracksPanel { width:360px; flex-shrink:0; background:#181f27; border-right:1px solid #2c3a48; display:flex; flex-direction:column; }
+  .tracksHeader { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:11px; font-weight:700; letter-spacing:1px; color:#8fa0ad; border-bottom:1px solid #26313d; }
+  .addBtn { width:24px; height:24px; border-radius:5px; border:1px solid #6fa8c9; background:transparent; color:#a9c6dc; font-size:14px; }
+  .addForm { display:flex; gap:6px; padding:8px 12px; border-bottom:1px solid #26313d; }
+  .addForm button { background:#8bd450; color:#12171c; border:none; border-radius:5px; padding:5px 10px; font-size:11px; font-weight:700; }
+  .trackList { flex:1; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:6px; }
+  .trackRow { display:flex; align-items:center; gap:6px; background:#1c252e; border:1px solid #283340; border-radius:7px; padding:6px 8px; }
+  .trackRow.armed { border-color:#e2574c; box-shadow:0 0 0 1px #e2574c55; }
+  .armBtn { width:24px; height:24px; border-radius:50%; border:1px solid #33424f; background:transparent; color:#728394; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; }
+  .armBtn.active { color:#e2574c; border-color:#e2574c; }
+  .trackDot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .trackInfo { flex:1; min-width:0; }
+  .trackName { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .trackMeta { font-size:9px; color:#728394; }
+  .smallBtn { width:20px; height:20px; border-radius:4px; border:1px solid #33424f; background:transparent; color:#8fa0ad; font-size:9px; font-weight:700; flex-shrink:0; }
+  .smallBtn.red { background:#e2574c; color:#12171c; border-color:#e2574c; }
+  .smallBtn.green { background:#8bd450; color:#12171c; border-color:#8bd450; }
+  .trackVol { width:50px; flex-shrink:0; }
+  .smallIconBtn { width:20px; height:20px; border-radius:4px; border:none; background:transparent; color:#5f7182; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
+  .masterRow { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid #26313d; }
+  .masterRow input { flex:1; }
+
+  .main { flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+  .hint { font-size:11px; color:#8fa0ad; }
+  .virtualKeys { display:flex; height:90px; border:1px solid #2c3a48; border-radius:8px; overflow:hidden; background:#0e1318; }
+  .vKey { flex:1; border:none; border-right:1px solid #10151a; }
+  .vKey.white { background:#dbe2e8; }
+  .vKey.black { background:#2a3542; max-width:24px; margin-left:-12px; margin-right:-12px; z-index:2; height:60%; }
+
+  .startOverlay { position:absolute; inset:0; background:#141a20ee; display:flex; align-items:center; justify-content:center; z-index:10; }
+  .startBtn { display:flex; align-items:center; gap:10px; padding:16px 26px; border-radius:10px; border:1px solid #6fa8c9; background:#212b35; color:#a9c6dc; font-size:13px; font-weight:700; }
+  .installBtn { display:none; align-items:center; gap:6px; padding:8px 12px; border-radius:6px; border:1px solid #8bd450; background:transparent; color:#8bd450; font-size:11px; font-weight:700; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/tone@14.8.49/build/Tone.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

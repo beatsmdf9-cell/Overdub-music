@@ -1,0 +1,15 @@
+{
+  "name": "Overdub — MIDI Looper",
+  "short_name": "Overdub",
+  "description": "Multitrack MIDI overdub recorder and mixer for USB-MIDI keyboards",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141a20",
+  "theme_color": "#1a222a",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
